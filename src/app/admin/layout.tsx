@@ -109,8 +109,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Logo */}
         <div className="p-6 border-b border-[#1e3324]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[#1a2e1f] border border-[#2d4f35] flex items-center justify-center flex-shrink-0">
-              <img src="/lrct.svg" alt="LRCT Logo" className="w-5 h-5" />
+            <div>
+              <img src="/lrct.svg" alt="LRCT Logo" className="w-16 h-16" />
             </div>
             <div>
               <div className="text-white text-sm font-bold leading-tight">LRCT Admin</div>

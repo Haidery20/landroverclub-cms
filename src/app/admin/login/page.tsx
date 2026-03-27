@@ -33,13 +33,14 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo / Brand */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#1a2e1f] border border-[#2d4f35] mb-4">
-            <svg viewBox="0 0 24 24" className="w-8 h-8 text-[#4ade80]" fill="none" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
-            </svg>
+          <div className="inline-flex items-center justify-center gap-3 mb-2">
+            <div>
+              <img src="/lrct.svg" alt="LRCT Logo" className="w-16 h-16 object-contain" />
+            </div>
+            <h1 className="text-white text-2xl font-bold tracking-tight">LRCT CMS
+              <p className="text-[#6b7c6e] text-sm">Land Rover Club Tanzania</p>
+            </h1>
           </div>
-          <h1 className="text-white text-2xl font-bold tracking-tight">LRCT Admin</h1>
-          <p className="text-[#6b7c6e] text-sm mt-1">Land Rover Club Tanzania</p>
         </div>
 
         {/* Login Card */}
@@ -69,13 +70,30 @@ export default function AdminLoginPage() {
             disabled={loading}
             className="w-full bg-[#4ade80] hover:bg-[#22c55e] text-[#0a0f0d] font-bold rounded-xl py-3 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Signing in…' : 'Sign In'}
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
+                </svg>
+                Signing in…
+              </span>
+            ) : 'Sign In'}
           </button>
         </form>
 
         <p className="text-center text-[#3a4f3e] text-xs mt-6">
           landroverclub.or.tz · CMS v1.0
         </p>
+        {loading && (
+          <div className="fixed inset-0 bg-[#0a0f0d] z-50 flex flex-col items-center justify-center gap-6">
+            <div className="w-32 h-32 rounded-full bg-[#e8f0e0] flex items-center justify-center animate-pulse">
+              <img src="/lrct.svg" alt="LRCT Logo" className="w-28 h-28 object-contain" />
+            </div>
+            <div className="w-10 h-10 border-4 border-[#4ade80] border-t-transparent rounded-full animate-spin" />
+            <p className="text-[#4a6050] text-sm tracking-widest uppercase">Signing in…</p>
+          </div>
+        )}
       </div>
     </div>
   )
