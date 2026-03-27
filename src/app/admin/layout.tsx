@@ -149,7 +149,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Footer */}
         <div className="p-4 border-t border-[#1e3324]">
           <a
-            href="/"
+            href="https://landroverclub.or.tz"
             target="_blank"
             className="flex items-center gap-2 text-[#4a6050] hover:text-[#4ade80] text-xs transition-colors mb-3"
           >
