@@ -1,0 +1,56 @@
+// firestore.rules
+// Deploy with: firebase deploy --only firestore:rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Public read collections ──────────────────────────────────────────────
+    // The front-end website reads these collections without authentication.
+    // All writes are blocked from the client — admin mutations go through
+    // the Next.js API routes which run server-side (no client auth needed).
+
+    match /events/{id} {
+      allow read: if true;
+      allow write: if false;  // server-side only
+    }
+
+    match /partners/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /gallery/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /committee_members/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /site_info/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /contact_details/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /membership_tiers/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── Membership applications ───────────────────────────────────────────────
+    // Public users can create (submit) applications.
+    // Reading and updating statuses is server-side only.
+    match /membership_applications/{id} {
+      allow create: if true;   // public form submissions
+      allow read, update, delete: if false;  // admin only via server
+    }
+  }
+}

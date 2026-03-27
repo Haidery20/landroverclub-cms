@@ -1,0 +1,17 @@
+// storage.rules
+// Deploy with: firebase deploy --only storage
+
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // All uploaded images are publicly readable
+    match /{allPaths=**} {
+      allow read: if true;
+      // Writes are done server-side via the Admin SDK or from the
+      // Next.js app running with the user's own Firebase config.
+      // Restrict to authenticated uploads if you add Firebase Auth later.
+      allow write: if request.auth != null || true; // open for now — tighten after adding Auth
+    }
+  }
+}
