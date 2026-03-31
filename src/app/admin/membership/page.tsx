@@ -258,20 +258,20 @@ export default function MembershipPage() {
             <form onSubmit={saveTier} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Tier Name *</label>
-                <input type="text" value={tierForm.name} onChange={e => setTF('name', e.target.value)} required placeholder="e.g. Full Member" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400" />
+                <input type="text" value={tierForm.name} onChange={e => setTF('name', e.target.value)} required placeholder="e.g. Full Member" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400" />
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">TZS Price</label>
-                  <input type="number" value={tierForm.price_tzs} onChange={e => setTF('price_tzs', parseInt(e.target.value))} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400" />
+                  <input type="number" value={tierForm.price_tzs} onChange={e => setTF('price_tzs', parseInt(e.target.value))} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">USD Price</label>
-                  <input type="number" value={tierForm.price_usd} onChange={e => setTF('price_usd', parseInt(e.target.value))} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400" />
+                  <input type="number" value={tierForm.price_usd} onChange={e => setTF('price_usd', parseInt(e.target.value))} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Period</label>
-                  <select value={tierForm.period} onChange={e => setTF('period', e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 bg-white">
+                  <select value={tierForm.period} onChange={e => setTF('period', e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-green-400 bg-white">
                     <option value="annual">Annual</option>
                     <option value="monthly">Monthly</option>
                     <option value="lifetime">Lifetime</option>
@@ -280,7 +280,7 @@ export default function MembershipPage() {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Description</label>
-                <textarea value={tierForm.description} onChange={e => setTF('description', e.target.value)} rows={2} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 resize-none" />
+                <textarea value={tierForm.description} onChange={e => setTF('description', e.target.value)} rows={2} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400 resize-none" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Benefits</label>

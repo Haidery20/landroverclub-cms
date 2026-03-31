@@ -19,20 +19,53 @@ export default function ImageUpload({ value, onChange, bucket, label = 'Image' }
     const file = e.target.files?.[0]
     if (!file) return
 
+    // Client-side validation
     if (file.size > 5 * 1024 * 1024) {
       setError('File must be under 5MB')
       return
     }
 
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file (JPG, PNG, etc)')
+      return
+    }
+
     setUploading(true)
     setError('')
-    const url = await uploadImage(file, bucket)
-    setUploading(false)
 
-    if (url) {
-      onChange(url)
-    } else {
-      setError('Upload failed. Please try again.')
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('bucket', bucket)
+
+      console.log('📤 Sending upload request...', { fileName: file.name, size: file.size, bucket })
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      console.log('📨 Response received:', { status: response.status, statusText: response.statusText })
+      
+      const data = await response.json()
+      console.log('📄 Response data:', data)
+
+      if (!response.ok) {
+        throw new Error(data.error || `Server error: ${response.status}`)
+      }
+
+      if (data.url) {
+        console.log('✅ Upload successful:', data.url)
+        onChange(data.url)
+        setError('')
+      } else {
+        throw new Error('No URL returned from server')
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error'
+      console.error('❌ Upload failed:', errorMsg)
+      setError(`Upload failed: ${errorMsg}`)
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -65,12 +98,12 @@ export default function ImageUpload({ value, onChange, bucket, label = 'Image' }
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="w-full h-32 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-2 hover:border-green-400 hover:bg-green-50 transition-all text-gray-400 hover:text-green-600"
+          className="w-full h-32 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-2 hover:border-green-400 hover:bg-green-50 transition-all text-gray-400 hover:text-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {uploading ? (
             <>
               <div className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-              <span className="text-xs">Uploading…</span>
+              <span className="text-xs text-gray-600">Uploading…<br/>This may take a minute</span>
             </>
           ) : (
             <>
@@ -84,7 +117,12 @@ export default function ImageUpload({ value, onChange, bucket, label = 'Image' }
         </button>
       )}
 
-      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+      {error && (
+        <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-700 text-xs font-medium">Upload Error</p>
+          <p className="text-red-600 text-xs mt-1">{error}</p>
+        </div>
+      )}
 
       <input
         ref={inputRef}

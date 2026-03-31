@@ -16,6 +16,7 @@ const defaultForm = {
   location: '',
   event_date: '',
   event_time: '',
+  registration_deadline: '',
   image_url: '',
   is_featured: false,
   status: 'upcoming' as EventStatus,
@@ -29,6 +30,7 @@ export default function EventForm({ event }: EventFormProps) {
     location: event.location ?? '',
     event_date: event.event_date,
     event_time: event.event_time ?? '',
+    registration_deadline: event.registration_deadline ?? '',
     image_url: event.image_url ?? '',
     is_featured: event.is_featured,
     status: event.status,
@@ -46,11 +48,18 @@ export default function EventForm({ event }: EventFormProps) {
     e.preventDefault()
     setSaving(true)
     setError('')
+
+    // Strip undefined values
+    const payload = Object.fromEntries(
+      Object.entries({ ...form, updated_at: new Date().toISOString() })
+        .filter(([, v]) => v !== undefined && v !== '')
+    )
+
     try {
       if (event) {
-        await updateEvent(event.id, form)
+        await updateEvent(event.id, payload as Partial<Event>)
       } else {
-        await createEvent(form)
+        await createEvent(payload as Omit<Event, 'id' | 'created_at' | 'updated_at'>)
       }
       router.push('/admin/events')
       router.refresh()
@@ -76,34 +85,47 @@ export default function EventForm({ event }: EventFormProps) {
 
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Title *</label>
-            <input type="text" value={form.title} onChange={e => set('title', e.target.value)} required placeholder="e.g. Annual Safari Rally 2025" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 transition-colors" />
+            <input type="text" value={form.title} onChange={e => set('title', e.target.value)} required placeholder="e.g. Annual Safari Rally 2025" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400 transition-colors" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Date *</label>
-              <input type="date" value={form.event_date} onChange={e => set('event_date', e.target.value)} required className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 transition-colors" />
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Event Date *</label>
+              <input type="date" value={form.event_date} onChange={e => set('event_date', e.target.value)} required className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400 transition-colors" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Time</label>
-              <input type="text" value={form.event_time} onChange={e => set('event_time', e.target.value)} placeholder="e.g. 8:00 AM" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 transition-colors" />
+              <input type="text" value={form.event_time} onChange={e => set('event_time', e.target.value)} placeholder="e.g. 8:00 AM" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400 transition-colors" />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">
+              Registration Deadline
+              <span className="ml-2 text-green-600 normal-case font-normal">(event auto-closes on this date)</span>
+            </label>
+            <input
+              type="date"
+              value={form.registration_deadline}
+              onChange={e => set('registration_deadline', e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400 transition-colors"
+            />
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Location</label>
-            <input type="text" value={form.location} onChange={e => set('location', e.target.value)} placeholder="e.g. Mikumi National Park, Tanzania" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 transition-colors" />
+            <input type="text" value={form.location} onChange={e => set('location', e.target.value)} placeholder="e.g. Mikumi National Park, Tanzania" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400 transition-colors" />
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Description</label>
-            <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={4} placeholder="Event details, schedule, requirements…" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 transition-colors resize-none" />
+            <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={4} placeholder="Event details, schedule, requirements…" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400 transition-colors resize-none" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Status</label>
-              <select value={form.status} onChange={e => set('status', e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 transition-colors bg-white">
+              <select value={form.status} onChange={e => set('status', e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-green-400 transition-colors bg-white">
                 <option value="upcoming">Upcoming</option>
                 <option value="ongoing">Ongoing</option>
                 <option value="past">Past</option>

@@ -1,0 +1,14 @@
+[
+  {
+    "origin": ["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000"],
+    "method": ["GET", "HEAD", "DELETE", "PUT", "POST", "OPTIONS"],
+    "responseHeader": ["Content-Type", "x-goog-meta-custom-metadata", "Authorization"],
+    "maxAgeSeconds": 3600
+  },
+  {
+    "origin": ["https://landroverclub-cms.vercel.app"],
+    "method": ["GET", "HEAD", "DELETE", "PUT", "POST", "OPTIONS"],
+    "responseHeader": ["Content-Type", "x-goog-meta-custom-metadata"],
+    "maxAgeSeconds": 3600
+  }
+]

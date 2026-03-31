@@ -43,19 +43,34 @@ export default function PartnersPage() {
 
   function set(key: string, value: unknown) { setForm(prev => ({ ...prev, [key]: value })) }
 
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault()
-    setSaving(true)
-    const payload = { ...form, updated_at: new Date().toISOString() }
+ async function handleSave(e: React.FormEvent) {
+  e.preventDefault()
+  setSaving(true)
+
+  try {
+    // Strip out any undefined values — Firestore rejects them
+    const payload = Object.fromEntries(
+      Object.entries({
+        ...form,
+        updated_at: new Date().toISOString(),
+      }).filter(([, v]) => v !== undefined)
+    ) as typeof form
+
     if (editing === 'new') {
       await createPartner(payload)
     } else {
       await updatePartner((editing as Partner).id, payload)
     }
-    setSaving(false)
+
     setEditing(null)
     fetchPartners()
+  } catch (err) {
+    console.error('❌ Save failed:', err)
+    alert('Save failed: ' + (err instanceof Error ? err.message : String(err)))
+  } finally {
+    setSaving(false)
   }
+}
 
   async function handleDelete() {
     setDeleting(true)
@@ -119,17 +134,17 @@ export default function PartnersPage() {
             <form onSubmit={handleSave} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Name *</label>
-                <input type="text" value={form.name} onChange={e => set('name', e.target.value)} required placeholder="Partner name" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400" />
+                <input type="text" value={form.name} onChange={e => set('name', e.target.value)} required placeholder="Partner name" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400" />
               </div>
               <ImageUpload value={form.logo_url} onChange={url => set('logo_url', url)} bucket="partners" label="Logo" />
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Website</label>
-                <input type="url" value={form.website_url} onChange={e => set('website_url', e.target.value)} placeholder="https://..." className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400" />
+                <input type="url" value={form.website_url} onChange={e => set('website_url', e.target.value)} placeholder="https://..." className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Tier</label>
-                  <select value={form.tier} onChange={e => set('tier', e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 bg-white">
+                  <select value={form.tier} onChange={e => set('tier', e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-green-400 bg-white">
                     <option value="platinum">Platinum</option>
                     <option value="gold">Gold</option>
                     <option value="silver">Silver</option>
@@ -138,12 +153,12 @@ export default function PartnersPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Sort Order</label>
-                  <input type="number" value={form.sort_order} onChange={e => set('sort_order', parseInt(e.target.value))} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400" />
+                  <input type="number" value={form.sort_order} onChange={e => set('sort_order', parseInt(e.target.value))} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Description</label>
-                <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={2} placeholder="Brief description…" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 resize-none" />
+                <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={2} placeholder="Brief description…" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400 resize-none" />
               </div>
               <label className="flex items-center gap-3 cursor-pointer">
                 <div className="relative">

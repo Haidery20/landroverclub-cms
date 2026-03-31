@@ -117,11 +117,11 @@ export default function ContactPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Label *</label>
-                  <input type="text" value={form.label} onChange={e => set('label', e.target.value)} required placeholder="e.g. Main Email" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400" />
+                  <input type="text" value={form.label} onChange={e => set('label', e.target.value)} required placeholder="e.g. Main Email" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Type</label>
-                  <select value={form.type} onChange={e => set('type', e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 bg-white">
+                  <select value={form.type} onChange={e => set('type', e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-green-400 bg-white">
                     <option value="email">Email</option>
                     <option value="phone">Phone</option>
                     <option value="address">Address</option>
@@ -133,16 +133,16 @@ export default function ContactPage() {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Value *</label>
-                <input type="text" value={form.value} onChange={e => set('value', e.target.value)} required placeholder="e.g. info@landroverclub.or.tz" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400" />
+                <input type="text" value={form.value} onChange={e => set('value', e.target.value)} required placeholder="e.g. info@landroverclub.or.tz" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Icon (emoji)</label>
-                  <input type="text" value={form.icon} onChange={e => set('icon', e.target.value)} placeholder="e.g. 📧" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400" />
+                  <input type="text" value={form.icon} onChange={e => set('icon', e.target.value)} placeholder="e.g. 📧" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Sort Order</label>
-                  <input type="number" value={form.sort_order} onChange={e => set('sort_order', parseInt(e.target.value))} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400" />
+                  <input type="number" value={form.sort_order} onChange={e => set('sort_order', parseInt(e.target.value))} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400" />
                 </div>
               </div>
               <label className="flex items-center gap-3 cursor-pointer">

@@ -4,12 +4,11 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
-    const auth = request.cookies.get('lrct_admin_auth')
-    if (!auth || auth.value !== 'authenticated') {
+    const session = request.cookies.get('lrct_session')
+    if (!session || !session.value) {
       return NextResponse.redirect(new URL('/admin/login', request.url))
     }
   }
-
   return NextResponse.next()
 }
 

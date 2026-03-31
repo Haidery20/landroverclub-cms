@@ -157,7 +157,7 @@ export default function AboutPage() {
                     onChange={e => setValue(activeSection, field.key, e.target.value)}
                     placeholder={field.placeholder}
                     rows={4}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 transition-colors resize-none"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400 transition-colors resize-none"
                   />
                 ) : (
                   <input
@@ -165,7 +165,7 @@ export default function AboutPage() {
                     value={values[field.key] ?? ''}
                     onChange={e => setValue(activeSection, field.key, e.target.value)}
                     placeholder={field.placeholder}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 transition-colors"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:border-green-400 transition-colors"
                   />
                 )}
               </div>

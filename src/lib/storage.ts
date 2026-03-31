@@ -1,10 +1,8 @@
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
-import { storage } from './firebase'
-
 /**
- * Upload a file to Firebase Storage and return its public download URL.
- * Mirrors the Supabase uploadImage(file, bucket, folder?) signature so
- * every call-site only needs to change the import path.
+ * Client-side upload helper — sends files to our Next.js API route
+ * which then uploads to Cloudinary server-side.
+ * Mirrors the old Firebase uploadImage(file, bucket, folder?) signature
+ * so no call-sites need to change.
  */
 export async function uploadImage(
   file: File,
@@ -12,30 +10,58 @@ export async function uploadImage(
   folder?: string
 ): Promise<string | null> {
   try {
-    const ext = file.name.split('.').pop()
-    const name = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-    const path = folder ? `${bucket}/${folder}/${name}` : `${bucket}/${name}`
+    if (file.size > 5 * 1024 * 1024) {
+      console.error('Upload failed: File too large (max 5MB)')
+      return null
+    }
 
-    const storageRef = ref(storage, path)
-    const snap = await uploadBytes(storageRef, file)
-    const url = await getDownloadURL(snap.ref)
-    return url
+    if (!file.type.startsWith('image/')) {
+      console.error('Upload failed: Not an image file')
+      return null
+    }
+
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('bucket', folder ? `${bucket}/${folder}` : bucket)
+
+    console.log('🚀 Uploading via Cloudinary...', { name: file.name, size: file.size })
+
+    const response = await fetch('/api/admin/upload', {
+      method: 'POST',
+      body: formData,
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      console.error('❌ Upload failed:', data.error)
+      return null
+    }
+
+    console.log('✅ Upload successful:', data.url)
+    return data.url ?? null
   } catch (err) {
-    console.error('Upload error:', err)
+    console.error('❌ Upload error:', err)
     return null
   }
 }
 
 /**
- * Delete a file from Firebase Storage using its full download URL.
+ * Delete an image by its Cloudinary URL.
+ * Extracts the public_id from the URL and calls the delete API.
  */
 export async function deleteImage(_bucket: string, url: string): Promise<void> {
   try {
-    const match = url.match(/\/o\/(.+?)\?/)
+    // Extract public_id from Cloudinary URL
+    // e.g. https://res.cloudinary.com/demo/image/upload/v123/landroverclub/events/abc.jpg
+    const match = url.match(/\/upload\/(?:v\d+\/)?(.+)\.[a-z]+$/i)
     if (!match) return
-    const path = decodeURIComponent(match[1])
-    const fileRef = ref(storage, path)
-    await deleteObject(fileRef)
+
+    await fetch('/api/admin/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ publicId: match[1] }),
+    })
   } catch (err) {
     console.error('Delete error:', err)
   }

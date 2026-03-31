@@ -2,6 +2,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { signOut } from 'firebase/auth'
+import { auth } from '../../lib/firebase'
 
 const navItems = [
   {
@@ -76,6 +78,15 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    label: 'Registrations',
+    href: '/admin/registrations',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+      </svg>
+    ),
+  },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -84,6 +95,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   async function handleLogout() {
+    await signOut(auth)
     await fetch('/api/admin/logout', { method: 'POST' })
     router.push('/admin/login')
     router.refresh()
@@ -93,25 +105,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-[#f5f5f0] flex">
-      {/* Mobile overlay */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-20 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 bg-black/50 z-20 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
-      <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-[#0a0f0d] z-30 transform transition-transform duration-300
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static lg:flex-shrink-0`}
-      >
-        {/* Logo */}
+      <aside className={`fixed top-0 left-0 h-full w-64 bg-[#0a0f0d] z-30 transform transition-transform duration-300
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static lg:flex-shrink-0`}>
         <div className="p-6 border-b border-[#1e3324]">
           <div className="flex items-center gap-3">
-            <div>
-              <img src="/lrct.svg" alt="LRCT Logo" className="w-16 h-16" />
-            </div>
+            <img src="/lrct.svg" alt="LRCT Logo" className="w-16 h-16" />
             <div>
               <div className="text-white text-sm font-bold leading-tight">LRCT Admin</div>
               <div className="text-[#4a6050] text-xs">CMS Panel</div>
@@ -119,24 +121,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
 
-        {/* Nav */}
         <nav className="p-4 space-y-1 flex-1">
           {navItems.map((item) => {
             const isActive = item.href === '/admin'
               ? pathname === '/admin'
               : pathname.startsWith(item.href)
-
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setSidebarOpen(false)}
+              <Link key={item.href} href={item.href} onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
                   ${isActive
                     ? 'bg-[#1a2e1f] text-[#4ade80] border border-[#2d4f35]'
                     : 'text-[#6b7c6e] hover:text-white hover:bg-[#111a13]'
-                  }`}
-              >
+                  }`}>
                 {item.icon}
                 {item.label}
               </Link>
@@ -144,22 +140,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        {/* Footer */}
         <div className="p-4 border-t border-[#1e3324]">
-          <a
-            href="https://landroverclub.or.tz"
-            target="_blank"
-            className="flex items-center gap-2 text-[#4a6050] hover:text-[#4ade80] text-xs transition-colors mb-3"
-          >
+          <a href="https://landroverclub.or.tz" target="_blank"
+            className="flex items-center gap-2 text-[#4a6050] hover:text-[#4ade80] text-xs transition-colors mb-3">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
             </svg>
             View Website
           </a>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-2 text-[#4a6050] hover:text-red-400 text-xs transition-colors"
-          >
+          <button onClick={handleLogout}
+            className="w-full flex items-center gap-2 text-[#4a6050] hover:text-red-400 text-xs transition-colors">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
             </svg>
@@ -168,24 +158,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      {/* Main */}
       <div className="flex-1 flex flex-col min-h-screen lg:overflow-auto">
-        {/* Top bar (mobile) */}
         <header className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
-          >
+          <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
             </svg>
           </button>
           <span className="text-sm font-semibold text-gray-800">LRCT Admin</span>
         </header>
-
-        <main className="flex-1 p-6 lg:p-8">
-          {children}
-        </main>
+        <main className="flex-1 p-6 lg:p-8">{children}</main>
       </div>
     </div>
   )

@@ -2,6 +2,7 @@ export type EventStatus = 'upcoming' | 'ongoing' | 'past' | 'cancelled'
 export type PartnerTier = 'platinum' | 'gold' | 'silver' | 'partner'
 export type ContactType = 'text' | 'email' | 'phone' | 'address' | 'social' | 'map_link'
 export type ApplicationStatus = 'pending' | 'approved' | 'rejected' | 'waitlisted'
+export type RegistrationStatus = 'pending' | 'confirmed' | 'cancelled'
 
 export interface Event {
   id: string
@@ -10,11 +11,25 @@ export interface Event {
   location?: string
   event_date: string
   event_time?: string
+  registration_deadline?: string  // ← added
   image_url?: string
   is_featured: boolean
   status: EventStatus
   created_at: string
   updated_at: string
+}
+
+export interface EventRegistration {
+  id: string
+  event_id: string
+  event_title: string
+  event_date: string
+  full_name: string
+  email: string
+  phone?: string
+  message?: string
+  status: RegistrationStatus
+  registered_at: string
 }
 
 export interface Partner {
@@ -29,7 +44,6 @@ export interface Partner {
   created_at: string
   updated_at: string
 }
-
 export interface GalleryItem {
   id: string
   title: string
@@ -41,7 +55,6 @@ export interface GalleryItem {
   sort_order: number
   created_at: string
 }
-
 export interface CommitteeMember {
   id: string
   full_name: string
@@ -55,7 +68,6 @@ export interface CommitteeMember {
   created_at: string
   updated_at: string
 }
-
 export interface SiteInfo {
   id: string
   section: string
@@ -63,7 +75,6 @@ export interface SiteInfo {
   value?: string
   updated_at: string
 }
-
 export interface ContactDetail {
   id: string
   label: string
@@ -74,7 +85,6 @@ export interface ContactDetail {
   sort_order: number
   updated_at: string
 }
-
 export interface MembershipTier {
   id: string
   name: string
@@ -89,7 +99,6 @@ export interface MembershipTier {
   created_at: string
   updated_at: string
 }
-
 export interface MembershipApplication {
   id: string
   full_name: string
@@ -105,7 +114,6 @@ export interface MembershipApplication {
   created_at: string
   updated_at: string
 }
-
 export type CmsSection =
   | 'events'
   | 'partners'
