@@ -27,6 +27,7 @@ export default function MembershipPage() {
   const [tiers, setTiers] = useState<MembershipTier[]>([])
   const [applications, setApplications] = useState<MembershipApplication[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [editingTier, setEditingTier] = useState<MembershipTier | 'new' | null>(null)
   const [tierForm, setTierForm] = useState(blankTier)
   const [benefitInput, setBenefitInput] = useState('')
@@ -39,10 +40,18 @@ export default function MembershipPage() {
   useEffect(() => { fetchAll() }, [])
 
   async function fetchAll() {
-    const [t, a] = await Promise.all([getMembershipTiers(), getMembershipApplications()])
-    setTiers(t)
-    setApplications(a)
-    setLoading(false)
+    try {
+      setError(null)
+      setLoading(true)
+      const [t, a] = await Promise.all([getMembershipTiers(), getMembershipApplications()])
+      setTiers(t)
+      setApplications(a)
+      setLoading(false)
+    } catch (err) {
+      console.error('Failed to load membership data:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load membership data')
+      setLoading(false)
+    }
   }
 
   function openNewTier() { setTierForm(blankTier); setBenefitInput(''); setEditingTier('new') }
@@ -68,35 +77,67 @@ export default function MembershipPage() {
 
   async function saveTier(e: React.FormEvent) {
     e.preventDefault()
-    setSavingTier(true)
-    if (editingTier === 'new') {
-      await createMembershipTier(tierForm)
-    } else {
-      await updateMembershipTier((editingTier as MembershipTier).id, tierForm)
+    try {
+      setSavingTier(true)
+      if (editingTier === 'new') {
+        await createMembershipTier(tierForm)
+      } else {
+        await updateMembershipTier((editingTier as MembershipTier).id, tierForm)
+      }
+      setSavingTier(false)
+      setEditingTier(null)
+      fetchAll()
+    } catch (err) {
+      console.error('Failed to save tier:', err)
+      setSavingTier(false)
+      setError(err instanceof Error ? err.message : 'Failed to save tier')
     }
-    setSavingTier(false)
-    setEditingTier(null)
-    fetchAll()
   }
 
   async function handleDeleteTier() {
-    setDeleting(true)
-    await deleteMembershipTier(deleteTarget!.id)
-    setDeleting(false)
-    setDeleteTarget(null)
-    fetchAll()
+    try {
+      setDeleting(true)
+      await deleteMembershipTier(deleteTarget!.id)
+      setDeleting(false)
+      setDeleteTarget(null)
+      fetchAll()
+    } catch (err) {
+      console.error('Failed to delete tier:', err)
+      setDeleting(false)
+      setError(err instanceof Error ? err.message : 'Failed to delete tier')
+    }
   }
 
   async function handleUpdateAppStatus(id: string, status: ApplicationStatus) {
-    await updateApplicationStatus(id, status)
-    fetchAll()
-    if (selectedApp?.id === id) setSelectedApp(prev => prev ? { ...prev, status } : null)
+    try {
+      await updateApplicationStatus(id, status)
+      fetchAll()
+      if (selectedApp?.id === id) setSelectedApp(prev => prev ? { ...prev, status } : null)
+    } catch (err) {
+      console.error('Failed to update application status:', err)
+      setError(err instanceof Error ? err.message : 'Failed to update application status')
+    }
   }
 
   const filteredApps = appFilter === 'all' ? applications : applications.filter(a => a.status === appFilter)
   const pendingCount = applications.filter(a => a.status === 'pending').length
 
   if (loading) return <div className="flex justify-center py-16"><div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" /></div>
+
+  if (error) return (
+    <div className="p-6">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">Membership</h1>
+      </div>
+      <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-red-800">
+        <p className="font-semibold mb-2">Failed to load membership data</p>
+        <p className="text-sm mb-4">{error}</p>
+        <button onClick={fetchAll} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700">
+          Try Again
+        </button>
+      </div>
+    </div>
+  )
 
   return (
     <div>
