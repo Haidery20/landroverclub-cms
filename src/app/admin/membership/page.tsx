@@ -1,9 +1,5 @@
 'use client'
 import { useState, useEffect } from 'react'
-import {
-  getMembershipTiers, createMembershipTier, updateMembershipTier, deleteMembershipTier,
-  getMembershipApplications, updateApplicationStatus, deleteMembershipApplication,
-} from '@/lib/db'
 import { MembershipTier, MembershipApplication, ApplicationStatus } from '@/lib/types'
 import ConfirmDelete from '@/components/admin/ConfirmDelete'
 
@@ -43,7 +39,17 @@ export default function MembershipPage() {
     try {
       setError(null)
       setLoading(true)
-      const [t, a] = await Promise.all([getMembershipTiers(), getMembershipApplications()])
+      const [tiersRes, appsRes] = await Promise.all([
+        fetch('/api/admin/membership/tiers'),
+        fetch('/api/admin/membership/applications'),
+      ])
+
+      if (!tiersRes.ok || !appsRes.ok) {
+        throw new Error(`Failed to fetch data: ${tiersRes.status} ${appsRes.status}`)
+      }
+
+      const t = await tiersRes.json()
+      const a = await appsRes.json()
       setTiers(t)
       setApplications(a)
       setLoading(false)
@@ -79,11 +85,19 @@ export default function MembershipPage() {
     e.preventDefault()
     try {
       setSavingTier(true)
-      if (editingTier === 'new') {
-        await createMembershipTier(tierForm)
-      } else {
-        await updateMembershipTier((editingTier as MembershipTier).id, tierForm)
-      }
+      const method = editingTier === 'new' ? 'POST' : 'PUT'
+      const body = editingTier === 'new'
+        ? tierForm
+        : { id: (editingTier as MembershipTier).id, ...tierForm }
+
+      const res = await fetch('/api/admin/membership/tiers', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
       setSavingTier(false)
       setEditingTier(null)
       fetchAll()
@@ -97,7 +111,12 @@ export default function MembershipPage() {
   async function handleDeleteTier() {
     try {
       setDeleting(true)
-      await deleteMembershipTier(deleteTarget!.id)
+      const res = await fetch(`/api/admin/membership/tiers?id=${deleteTarget!.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
       setDeleting(false)
       setDeleteTarget(null)
       fetchAll()
@@ -110,7 +129,14 @@ export default function MembershipPage() {
 
   async function handleUpdateAppStatus(id: string, status: ApplicationStatus) {
     try {
-      await updateApplicationStatus(id, status)
+      const res = await fetch('/api/admin/membership/applications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status }),
+      })
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
       fetchAll()
       if (selectedApp?.id === id) setSelectedApp(prev => prev ? { ...prev, status } : null)
     } catch (err) {

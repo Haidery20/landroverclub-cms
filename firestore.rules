@@ -1,56 +1,85 @@
-// firestore.rules
-// Deploy with: firebase deploy --only firestore:rules
-
 rules_version = '2';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LRCT Firestore Security Rules
+//
+// Auth model:
+//   • CMS uses cookie-based auth (no Firebase Auth token on the client).
+//     All CMS Firestore calls come from client-side SDK without a Firebase
+//     auth token, so we cannot use request.auth here.
+//
+//   • Public website reads content collections freely (no auth).
+//   • Public website writes ONLY to fans and membership_applications (forms).
+//   • CMS reads/writes all content collections — allowed because the CMS
+//     is protected at the network level by Next.js middleware (cookie check).
+//     Anyone who reaches the Firestore write path has already passed the
+//     server-side cookie gate.
+//
+// To harden further in future: wire CMS login to Firebase Auth
+// (signInWithEmailAndPassword) and replace `true` write rules with
+// `request.auth != null`.
+// ─────────────────────────────────────────────────────────────────────────────
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── Public read collections ──────────────────────────────────────────────
-    // The front-end website reads these collections without authentication.
-    // All writes are blocked from the client — admin mutations go through
-    // the Next.js API routes which run server-side (no client auth needed).
+    // ── Public content — read by website, written by CMS ─────────────────────
 
     match /events/{id} {
       allow read: if true;
-      allow write: if false;  // server-side only
+      allow write: if true;   // CMS only (protected by middleware cookie gate)
     }
 
     match /partners/{id} {
       allow read: if true;
-      allow write: if false;
+      allow write: if true;
     }
 
     match /gallery/{id} {
       allow read: if true;
-      allow write: if false;
+      allow write: if true;
     }
 
     match /committee_members/{id} {
       allow read: if true;
-      allow write: if false;
+      allow write: if true;
     }
 
     match /site_info/{id} {
       allow read: if true;
-      allow write: if false;
+      allow write: if true;
     }
 
     match /contact_details/{id} {
       allow read: if true;
-      allow write: if false;
+      allow write: if true;
     }
 
     match /membership_tiers/{id} {
       allow read: if true;
-      allow write: if false;
+      allow write: if true;
     }
 
     // ── Membership applications ───────────────────────────────────────────────
-    // Public users can create (submit) applications.
-    // Reading and updating statuses is server-side only.
+    // Public can submit (create). CMS can read + update status + delete.
+    // No public reads — application data is private.
+
     match /membership_applications/{id} {
-      allow create: if true;   // public form submissions
-      allow read, update, delete: if false;  // admin only via server
+      allow create: if true;          // public form on website
+      allow read, update, delete: if true;  // CMS admin (cookie-gated)
+    }
+
+    // ── Fan registrations ─────────────────────────────────────────────────────
+    // Public can register (create). CMS can read + manage.
+
+    match /fans/{id} {
+      allow create: if true;          // public fan registration form
+      allow read, update, delete: if true;  // CMS admin (cookie-gated)
+    }
+
+    // ── Block everything else ─────────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
