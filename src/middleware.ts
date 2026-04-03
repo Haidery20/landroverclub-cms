@@ -4,9 +4,8 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
-    // Must match the cookie name set in /api/admin/login/route.ts
-    const session = request.cookies.get('lrct_admin_auth')
-    if (!session || session.value !== 'authenticated') {
+    const session = request.cookies.get('lrct_session')
+    if (!session || !session.value) {
       return NextResponse.redirect(new URL('/admin/login', request.url))
     }
   }

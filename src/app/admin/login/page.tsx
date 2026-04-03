@@ -18,15 +18,23 @@ export default function AdminLoginPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password)
       const token = await userCredential.user.getIdToken()
-      await fetch('/api/admin/session', {
+      
+      const sessionRes = await fetch('/api/admin/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
       })
+      
+      if (!sessionRes.ok) {
+        throw new Error(`Session failed: ${sessionRes.status}`)
+      }
+
+      // Small delay to ensure cookie is set before navigation
+      await new Promise(resolve => setTimeout(resolve, 100))
       router.push('/admin')
-      router.refresh()
     } catch (err: any) {
-      setError('Incorrect email or password. Please try again.')
+      console.error('Login error:', err)
+      setError(err.message || 'Login failed. Please try again.')
       setLoading(false)
     }
   }
