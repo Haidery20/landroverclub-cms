@@ -1,3 +1,5 @@
+'use client'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   getEvents,
@@ -7,45 +9,59 @@ import {
   getMembershipApplications,
 } from '@/lib/db'
 
-async function getStats() {
-  const [events, partners, gallery, committee, applications] = await Promise.all([
-    getEvents(),
-    getPartners(),
-    getGallery(),
-    getCommitteeMembers(),
-    getMembershipApplications(),
-  ])
-
-  return {
-    events: events.length,
-    upcomingEvents: events.filter(e => e.status === 'upcoming').length,
-    partners: partners.filter(p => p.is_active).length,
-    gallery: gallery.length,
-    committee: committee.filter(m => m.is_active).length,
-    applications: applications.length,
-    pendingApplications: applications.filter(a => a.status === 'pending').length,
-  }
-}
-
 const statCards = [
-  { label: 'Total Events',        key: 'events',       sub: 'upcomingEvents',       subLabel: 'upcoming',      href: '/admin/events',     color: 'bg-blue-50 text-blue-600 border-blue-100' },
-  { label: 'Active Partners',     key: 'partners',                                                              href: '/admin/partners',   color: 'bg-amber-50 text-amber-600 border-amber-100' },
-  { label: 'Gallery Photos',      key: 'gallery',                                                               href: '/admin/gallery',    color: 'bg-purple-50 text-purple-600 border-purple-100' },
-  { label: 'Committee Members',   key: 'committee',                                                             href: '/admin/committee',  color: 'bg-green-50 text-green-600 border-green-100' },
-  { label: 'Member Applications', key: 'applications', sub: 'pendingApplications',  subLabel: 'pending review', href: '/admin/membership', color: 'bg-rose-50 text-rose-600 border-rose-100' },
+  { label: 'Total Events',        key: 'events',       sub: 'upcomingEvents',      subLabel: 'upcoming',       href: '/admin/events',     color: 'bg-blue-50 text-blue-600 border-blue-100' },
+  { label: 'Active Partners',     key: 'partners',     sub: null,                  subLabel: '',               href: '/admin/partners',   color: 'bg-amber-50 text-amber-600 border-amber-100' },
+  { label: 'Gallery Photos',      key: 'gallery',      sub: null,                  subLabel: '',               href: '/admin/gallery',    color: 'bg-purple-50 text-purple-600 border-purple-100' },
+  { label: 'Committee Members',   key: 'committee',    sub: null,                  subLabel: '',               href: '/admin/committee',  color: 'bg-green-50 text-green-600 border-green-100' },
+  { label: 'Member Applications', key: 'applications', sub: 'pendingApplications', subLabel: 'pending review', href: '/admin/membership', color: 'bg-rose-50 text-rose-600 border-rose-100' },
 ]
 
 const quickLinks = [
-  { label: 'Add New Event',          href: '/admin/events/new',  icon: '📅' },
-  { label: 'Upload Photos',          href: '/admin/gallery',     icon: '🖼️' },
-  { label: 'Add Partner',            href: '/admin/partners',    icon: '🤝' },
-  { label: 'Add Committee Member',   href: '/admin/committee',   icon: '👤' },
-  { label: 'Edit About Page',        href: '/admin/about',       icon: '📝' },
-  { label: 'Update Contact Info',    href: '/admin/contact',     icon: '📞' },
+  { label: 'Add New Event',        href: '/admin/events/new', icon: '📅' },
+  { label: 'Upload Photos',        href: '/admin/gallery',    icon: '🖼️' },
+  { label: 'Add Partner',          href: '/admin/partners',   icon: '🤝' },
+  { label: 'Add Committee Member', href: '/admin/committee',  icon: '👤' },
+  { label: 'Edit About Page',      href: '/admin/about',      icon: '📝' },
+  { label: 'Update Contact Info',  href: '/admin/contact',    icon: '📞' },
 ]
 
-export default async function AdminDashboardPage() {
-  const stats = await getStats()
+const defaultStats = {
+  events: 0, upcomingEvents: 0, partners: 0,
+  gallery: 0, committee: 0, applications: 0, pendingApplications: 0,
+}
+
+export default function AdminDashboardPage() {
+  const [stats, setStats] = useState(defaultStats)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [events, partners, gallery, committee, applications] = await Promise.all([
+          getEvents(),
+          getPartners(),
+          getGallery(),
+          getCommitteeMembers(),
+          getMembershipApplications(),
+        ])
+        setStats({
+          events: events.length,
+          upcomingEvents: events.filter(e => e.status === 'upcoming').length,
+          partners: partners.filter(p => p.is_active).length,
+          gallery: gallery.length,
+          committee: committee.filter(m => m.is_active).length,
+          applications: applications.length,
+          pendingApplications: applications.filter(a => a.status === 'pending').length,
+        })
+      } catch (err) {
+        console.error('Failed to load dashboard stats:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
 
   return (
     <div>
@@ -57,8 +73,8 @@ export default async function AdminDashboardPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         {statCards.map((card) => {
-          const value = stats[card.key as keyof typeof stats] as number
-          const subValue = card.sub ? (stats[card.sub as keyof typeof stats] as number) : null
+          const value = loading ? '—' : stats[card.key as keyof typeof stats]
+          const subValue = card.sub ? stats[card.sub as keyof typeof stats] : null
 
           return (
             <Link
@@ -68,7 +84,7 @@ export default async function AdminDashboardPage() {
             >
               <div className="text-3xl font-bold mb-1">{value}</div>
               <div className="text-sm font-medium opacity-80">{card.label}</div>
-              {subValue !== null && subValue > 0 && (
+              {!loading && subValue !== null && (subValue as number) > 0 && (
                 <div className="text-xs mt-1 opacity-60">{subValue} {card.subLabel}</div>
               )}
             </Link>
