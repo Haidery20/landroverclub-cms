@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { getContactDetails, createContactDetail, updateContactDetail, deleteContactDetail } from '@/lib/db'
 import { ContactDetail, ContactType } from '@/lib/types'
 import ConfirmDelete from '@/components/admin/ConfirmDelete'
 
@@ -13,18 +12,29 @@ const blank = { label: '', value: '', type: 'text' as ContactType, icon: '', is_
 export default function ContactPage() {
   const [contacts, setContacts] = useState<ContactDetail[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<ContactDetail | 'new' | null>(null)
   const [form, setForm] = useState(blank)
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<ContactDetail | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  useEffect(() => { fetch() }, [])
+  useEffect(() => { fetchData() }, [])
 
-  async function fetch() {
-    const data = await getContactDetails()
-    setContacts(data)
-    setLoading(false)
+  async function fetchData() {
+    try {
+      setError(null)
+      setLoading(true)
+      const res = await fetch('/api/admin/contact')
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setContacts(data)
+      setLoading(false)
+    } catch (err) {
+      console.error('Failed to fetch contact details:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load contact details')
+      setLoading(false)
+    }
   }
 
   function openNew() { setForm(blank); setEditing('new') }
@@ -36,26 +46,82 @@ export default function ContactPage() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    setSaving(true)
-    const payload = { ...form, updated_at: new Date().toISOString() }
-    if (editing === 'new') await createContactDetail(payload)
-    else await updateContactDetail((editing as ContactDetail).id, payload)
-    setSaving(false)
-    setEditing(null)
-    fetch()
+    try {
+      setSaving(true)
+      const payload = { ...form, updated_at: new Date().toISOString() }
+      const method = editing === 'new' ? 'POST' : 'PUT'
+      const body = editing === 'new' ? payload : { id: (editing as ContactDetail).id, ...payload }
+      
+      const res = await fetch('/api/admin/contact', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      setSaving(false)
+      setEditing(null)
+      fetchData()
+    } catch (err) {
+      console.error('Failed to save contact detail:', err)
+      setSaving(false)
+      setError(err instanceof Error ? err.message : 'Failed to save contact detail')
+    }
   }
 
   async function handleDelete() {
-    setDeleting(true)
-    await deleteContactDetail(deleteTarget!.id)
-    setDeleting(false)
-    setDeleteTarget(null)
-    fetch()
+    try {
+      setDeleting(true)
+      const res = await fetch(`/api/admin/contact?id=${deleteTarget!.id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      setDeleting(false)
+      setDeleteTarget(null)
+      fetchData()
+    } catch (err) {
+      console.error('Failed to delete contact detail:', err)
+      setDeleting(false)
+      setError(err instanceof Error ? err.message : 'Failed to delete contact detail')
+    }
   }
 
   async function toggleActive(c: ContactDetail) {
-    await updateContactDetail(c.id, { is_active: !c.is_active })
-    fetch()
+    try {
+      const res = await fetch('/api/admin/contact', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: c.id, is_active: !c.is_active }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      fetchData()
+    } catch (err) {
+      console.error('Failed to toggle active:', err)
+      setError(err instanceof Error ? err.message : 'Failed to update contact')
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-16">
+        <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Contact Details</h1>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-red-800">
+          <p className="font-semibold mb-2">Failed to load contact details</p>
+          <p className="text-sm mb-4">{error}</p>
+          <button onClick={fetchData} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700">
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (

@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { getSiteInfo, upsertSiteInfo } from '@/lib/db'
 import { SiteInfo } from '@/lib/types'
 
 const SECTIONS = [
@@ -51,6 +50,7 @@ type SiteInfoMap = Record<string, Record<string, string>>
 export default function AboutPage() {
   const [data, setData] = useState<SiteInfoMap>({})
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState<string | null>(null)
   const [saved, setSaved] = useState<string | null>(null)
   const [activeSection, setActiveSection] = useState('hero')
@@ -58,16 +58,25 @@ export default function AboutPage() {
   useEffect(() => { fetchData() }, [])
 
   async function fetchData() {
-    // getSiteInfo() returns all site_info docs from Firestore.
-    // Each doc has { section, key, value } — we reshape into a nested map.
-    const rows = await getSiteInfo()
-    const map: SiteInfoMap = {}
-    rows.forEach((row: SiteInfo) => {
-      if (!map[row.section]) map[row.section] = {}
-      map[row.section][row.key] = row.value ?? ''
-    })
-    setData(map)
-    setLoading(false)
+    try {
+      setError(null)
+      setLoading(true)
+      const res = await fetch('/api/admin/site-info')
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const rows = await res.json()
+      
+      const map: SiteInfoMap = {}
+      rows.forEach((row: SiteInfo) => {
+        if (!map[row.section]) map[row.section] = {}
+        map[row.section][row.key] = row.value ?? ''
+      })
+      setData(map)
+      setLoading(false)
+    } catch (err) {
+      console.error('Failed to fetch site info:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load site info')
+      setLoading(false)
+    }
   }
 
   function setValue(section: string, key: string, value: string) {
@@ -78,23 +87,56 @@ export default function AboutPage() {
   }
 
   async function saveSection(sectionKey: string) {
-    setSaving(sectionKey)
-    const section = SECTIONS.find(s => s.key === sectionKey)!
-    const values = data[sectionKey] ?? {}
+    try {
+      setSaving(sectionKey)
+      const section = SECTIONS.find(s => s.key === sectionKey)!
+      const values = data[sectionKey] ?? {}
 
-    // upsertSiteInfo writes to Firestore doc id "<section>__<key>"
-    await Promise.all(
-      section.fields.map(field =>
-        upsertSiteInfo(sectionKey, field.key, values[field.key] ?? '')
+      await Promise.all(
+        section.fields.map(field =>
+          fetch('/api/admin/site-info', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ section: sectionKey, key: field.key, value: values[field.key] ?? '' }),
+          })
+        )
       )
-    )
 
-    setSaving(null)
-    setSaved(sectionKey)
-    setTimeout(() => setSaved(null), 2500)
+      setSaving(null)
+      setSaved(sectionKey)
+      setTimeout(() => setSaved(null), 2500)
+      fetchData()
+    } catch (err) {
+      console.error('Failed to save section:', err)
+      setSaving(null)
+      setError(err instanceof Error ? err.message : 'Failed to save section')
+    }
   }
 
-  if (loading) return <div className="flex justify-center py-16"><div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" /></div>
+  if (loading) {
+    return (
+      <div className="flex justify-center py-16">
+        <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">About & Site Info</h1>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-red-800">
+          <p className="font-semibold mb-2">Failed to load site info</p>
+          <p className="text-sm mb-4">{error}</p>
+          <button onClick={fetchData} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700">
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   const currentSection = SECTIONS.find(s => s.key === activeSection)!
   const values = data[activeSection] ?? {}

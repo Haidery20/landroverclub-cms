@@ -111,7 +111,7 @@ export async function deleteEvent(id: string): Promise<void> {
 // ─── PARTNERS ────────────────────────────────────────────────────────────────
 
 export async function getPartners(): Promise<Partner[]> {
-  return getAll<Partner>('partners', orderBy('sort_order'), orderBy('name'))
+  return getAll<Partner>('partners', orderBy('sort_order'))
 }
 
 export async function getPartner(id: string): Promise<Partner | null> {
@@ -228,8 +228,7 @@ export async function upsertSiteInfo(
 export async function getContactDetails(): Promise<ContactDetail[]> {
   return getAll<ContactDetail>(
     'contact_details',
-    orderBy('sort_order'),
-    orderBy('label')
+    orderBy('sort_order')
   )
 }
 
