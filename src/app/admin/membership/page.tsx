@@ -1,4 +1,5 @@
 'use client'
+import { getMembershipTiers, getMembershipApplications, createMembershipTier, updateMembershipTier, deleteMembershipTier, updateApplicationStatus } from '@/lib/db'
 import { useState, useEffect } from 'react'
 import { MembershipTier, MembershipApplication, ApplicationStatus } from '@/lib/types'
 import ConfirmDelete from '@/components/admin/ConfirmDelete'
@@ -36,29 +37,21 @@ export default function MembershipPage() {
   useEffect(() => { fetchAll() }, [])
 
   async function fetchAll() {
-    try {
-      setError(null)
-      setLoading(true)
-      const [tiersRes, appsRes] = await Promise.all([
-        fetch('/api/admin/membership/tiers'),
-        fetch('/api/admin/membership/applications'),
-      ])
-
-      if (!tiersRes.ok || !appsRes.ok) {
-        throw new Error(`Failed to fetch data: ${tiersRes.status} ${appsRes.status}`)
-      }
-
-      const t = await tiersRes.json()
-      const a = await appsRes.json()
-      setTiers(t)
-      setApplications(a)
-      setLoading(false)
-    } catch (err) {
-      console.error('Failed to load membership data:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load membership data')
-      setLoading(false)
-    }
+  try {
+    setError(null)
+    setLoading(true)
+    const [t, a] = await Promise.all([
+      getMembershipTiers(),           // direct Firestore call
+      getMembershipApplications(),    // direct Firestore call
+    ])
+    setTiers(t)
+    setApplications(a)
+    setLoading(false)
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Failed to load')
+    setLoading(false)
   }
+}
 
   function openNewTier() { setTierForm(blankTier); setBenefitInput(''); setEditingTier('new') }
   function openEditTier(t: MembershipTier) {
