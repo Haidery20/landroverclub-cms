@@ -37,21 +37,21 @@ export default function MembershipPage() {
   useEffect(() => { fetchAll() }, [])
 
   async function fetchAll() {
-  try {
-    setError(null)
-    setLoading(true)
-    const [t, a] = await Promise.all([
-      getMembershipTiers(),           // direct Firestore call
-      getMembershipApplications(),    // direct Firestore call
-    ])
-    setTiers(t)
-    setApplications(a)
-    setLoading(false)
-  } catch (err) {
-    setError(err instanceof Error ? err.message : 'Failed to load')
-    setLoading(false)
+    try {
+      setError(null)
+      setLoading(true)
+      const [t, a] = await Promise.all([
+        getMembershipTiers(),           // direct Firestore call
+        getMembershipApplications(),    // direct Firestore call
+      ])
+      setTiers(t)
+      setApplications(a)
+      setLoading(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load')
+      setLoading(false)
+    }
   }
-}
 
   function openNewTier() { setTierForm(blankTier); setBenefitInput(''); setEditingTier('new') }
   function openEditTier(t: MembershipTier) {
@@ -282,15 +282,98 @@ export default function MembershipPage() {
                 <button onClick={() => setSelectedApp(null)} className="text-gray-400 hover:text-gray-700">✕</button>
               </div>
               <div className="space-y-3 text-sm">
-                <div><p className="text-xs text-gray-400 font-medium uppercase tracking-widest">Full Name</p><p className="text-gray-900 font-medium mt-0.5">{selectedApp.full_name}</p></div>
-                <div><p className="text-xs text-gray-400 font-medium uppercase tracking-widest">Email</p><p className="text-gray-900 mt-0.5">{selectedApp.email}</p></div>
-                {selectedApp.phone && <div><p className="text-xs text-gray-400 font-medium uppercase tracking-widest">Phone</p><p className="text-gray-900 mt-0.5">{selectedApp.phone}</p></div>}
-                {selectedApp.vehicle_make && (
-                  <div><p className="text-xs text-gray-400 font-medium uppercase tracking-widest">Vehicle</p><p className="text-gray-900 mt-0.5">{selectedApp.vehicle_year} {selectedApp.vehicle_make} {selectedApp.vehicle_model}</p></div>
+                <div>
+                  <p className="text-xs text-gray-400 font-medium uppercase tracking-widest">Full Name</p>
+                  <p className="text-gray-900 font-medium mt-0.5">{selectedApp.full_name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 font-medium uppercase tracking-widest">Email</p>
+                  <p className="text-gray-900 mt-0.5">{selectedApp.email}</p>
+                </div>
+                {selectedApp.phone && (
+                  <div>
+                    <p className="text-xs text-gray-400 font-medium uppercase tracking-widest">Phone</p>
+                    <p className="text-gray-900 mt-0.5">{selectedApp.phone}</p>
+                  </div>
                 )}
-                {selectedApp.message && <div><p className="text-xs text-gray-400 font-medium uppercase tracking-widest">Message</p><p className="text-gray-600 mt-0.5 text-xs leading-relaxed">{selectedApp.message}</p></div>}
-                <div><p className="text-xs text-gray-400 font-medium uppercase tracking-widest">Submitted</p><p className="text-gray-900 mt-0.5">{new Date(selectedApp.created_at).toLocaleString()}</p></div>
+                {selectedApp.vehicle_make && (
+                  <div>
+                    <p className="text-xs text-gray-400 font-medium uppercase tracking-widest">Vehicle</p>
+                    <p className="text-gray-900 mt-0.5">
+                      {selectedApp.vehicle_year} {selectedApp.vehicle_make} {selectedApp.vehicle_model}
+                    </p>
+                  </div>
+                )}
+                {selectedApp.message && (
+                  <div>
+                    <p className="text-xs text-gray-400 font-medium uppercase tracking-widest">Message</p>
+                    <p className="text-gray-600 mt-0.5 text-xs leading-relaxed">{selectedApp.message}</p>
+                  </div>
+                )}
+
+                {/* ATTACHMENTS SECTION */}
+                {selectedApp.attachment_urls && selectedApp.attachment_urls.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-400 font-medium uppercase tracking-widest mb-2">
+                      Attachments ({selectedApp.attachment_urls.length})
+                    </p>
+                    <div className="space-y-2">
+                      {selectedApp.attachment_urls.map((url, i) => {
+                        const isImage = /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url)
+                        const filename = url.split('/').pop()?.split('?')[0] ?? `File ${i + 1}`
+                        return (
+                          <div key={i} className="border border-gray-100 rounded-xl overflow-hidden">
+                            {isImage ? (
+                              <a href={url} target="_blank" rel="noopener noreferrer">
+                                <img
+                                  src={url}
+                                  alt={`Attachment ${i + 1}`}
+                                  className="w-full h-32 object-cover hover:opacity-90 transition-opacity"
+                                />
+                              </a>
+                            ) : (
+                              <a
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors"
+                              >
+                                <div className="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth={1.5} className="w-5 h-5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                  </svg>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium text-gray-900 truncate">{filename}</p>
+                                  <p className="text-xs text-blue-500">Click to open</p>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4 text-gray-400 flex-shrink-0">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                </svg>
+                              </a>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* No attachments */}
+                {(!selectedApp.attachment_urls || selectedApp.attachment_urls.length === 0) && (
+                  <div>
+                    <p className="text-xs text-gray-400 font-medium uppercase tracking-widest">Attachments</p>
+                    <p className="text-xs text-gray-400 mt-1 italic">No attachments submitted</p>
+                  </div>
+                )}
+
+                <div>
+                  <p className="text-xs text-gray-400 font-medium uppercase tracking-widest">Submitted</p>
+                  <p className="text-gray-900 mt-0.5">{new Date(selectedApp.created_at).toLocaleString()}</p>
+                </div>
               </div>
+
+              {/* Status update buttons */}
               <div className="mt-5 pt-5 border-t border-gray-100">
                 <p className="text-xs text-gray-400 font-medium uppercase tracking-widest mb-3">Update Status</p>
                 <div className="grid grid-cols-2 gap-2">
@@ -298,7 +381,10 @@ export default function MembershipPage() {
                     <button
                       key={s}
                       onClick={() => handleUpdateAppStatus(selectedApp.id, s)}
-                      className={`py-2 rounded-lg text-xs font-medium capitalize transition-all ${selectedApp.status === s ? statusColors[s] + ' ring-1 ring-current' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
+                      className={`py-2 rounded-lg text-xs font-medium capitalize transition-all ${selectedApp.status === s
+                          ? statusColors[s] + ' ring-1 ring-current'
+                          : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                        }`}
                     >
                       {s}
                     </button>
@@ -307,6 +393,7 @@ export default function MembershipPage() {
               </div>
             </div>
           )}
+
         </div>
       )}
 

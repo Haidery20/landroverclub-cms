@@ -7,6 +7,13 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
+const ALLOWED_TYPES = [
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
@@ -16,15 +23,14 @@ export async function POST(req: NextRequest) {
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
-
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File must be under 5MB' }, { status: 400 })
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File must be under 10MB' }, { status: 400 })
+    }
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return NextResponse.json({ error: 'Only images and PDF/Word documents are allowed' }, { status: 400 })
     }
 
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'Only image files are allowed' }, { status: 400 })
-    }
-
+    const isImage = file.type.startsWith('image/')
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
@@ -32,7 +38,7 @@ export async function POST(req: NextRequest) {
       cloudinary.uploader.upload_stream(
         {
           folder: `landroverclub/${bucket}`,
-          resource_type: 'image',
+          resource_type: isImage ? 'image' : 'raw',
         },
         (error, result) => {
           if (error || !result) return reject(error ?? new Error('Upload failed'))
@@ -41,7 +47,6 @@ export async function POST(req: NextRequest) {
       ).end(buffer)
     })
 
-    console.log('✅ Cloudinary upload successful:', result.secure_url)
     return NextResponse.json({ url: result.secure_url })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Upload failed'

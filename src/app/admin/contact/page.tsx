@@ -1,4 +1,5 @@
 'use client'
+import { getContactDetails, createContactDetail, updateContactDetail, deleteContactDetail } from '@/lib/db'
 import { useState, useEffect } from 'react'
 import { ContactDetail, ContactType } from '@/lib/types'
 import ConfirmDelete from '@/components/admin/ConfirmDelete'
@@ -22,20 +23,18 @@ export default function ContactPage() {
   useEffect(() => { fetchData() }, [])
 
   async function fetchData() {
-    try {
-      setError(null)
-      setLoading(true)
-      const res = await fetch('/api/admin/contact')
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = await res.json()
-      setContacts(data)
-      setLoading(false)
-    } catch (err) {
-      console.error('Failed to fetch contact details:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load contact details')
-      setLoading(false)
-    }
+  try {
+    setError(null)
+    setLoading(true)
+    const data = await getContactDetails()
+    setContacts(data)
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Failed to load')
+  } finally {
+    setLoading(false)
   }
+}
+
 
   function openNew() { setForm(blank); setEditing('new') }
   function openEdit(c: ContactDetail) {
@@ -45,59 +44,46 @@ export default function ContactPage() {
   function set(k: string, v: unknown) { setForm(p => ({ ...p, [k]: v })) }
 
   async function handleSave(e: React.FormEvent) {
-    e.preventDefault()
-    try {
-      setSaving(true)
-      const payload = { ...form, updated_at: new Date().toISOString() }
-      const method = editing === 'new' ? 'POST' : 'PUT'
-      const body = editing === 'new' ? payload : { id: (editing as ContactDetail).id, ...payload }
-      
-      const res = await fetch('/api/admin/contact', {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      setSaving(false)
-      setEditing(null)
-      fetchData()
-    } catch (err) {
-      console.error('Failed to save contact detail:', err)
-      setSaving(false)
-      setError(err instanceof Error ? err.message : 'Failed to save contact detail')
+  e.preventDefault()
+  try {
+    setSaving(true)
+    const payload = { ...form, updated_at: new Date().toISOString() }
+    if (editing === 'new') {
+      await createContactDetail(payload)
+    } else {
+      await updateContactDetail((editing as ContactDetail).id, payload)
     }
+    setEditing(null)
+    fetchData()
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Failed to save')
+  } finally {
+    setSaving(false)
   }
+}
+
 
   async function handleDelete() {
-    try {
-      setDeleting(true)
-      const res = await fetch(`/api/admin/contact?id=${deleteTarget!.id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      setDeleting(false)
-      setDeleteTarget(null)
-      fetchData()
-    } catch (err) {
-      console.error('Failed to delete contact detail:', err)
-      setDeleting(false)
-      setError(err instanceof Error ? err.message : 'Failed to delete contact detail')
-    }
+  try {
+    setDeleting(true)
+    await deleteContactDetail(deleteTarget!.id)
+    setDeleteTarget(null)
+    fetchData()
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Failed to delete')
+  } finally {
+    setDeleting(false)
   }
+}
 
   async function toggleActive(c: ContactDetail) {
-    try {
-      const res = await fetch('/api/admin/contact', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: c.id, is_active: !c.is_active }),
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      fetchData()
-    } catch (err) {
-      console.error('Failed to toggle active:', err)
-      setError(err instanceof Error ? err.message : 'Failed to update contact')
-    }
+  try {
+    await updateContactDetail(c.id, { is_active: !c.is_active })
+    fetchData()
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Failed to update')
   }
+}
 
   if (loading) {
     return (

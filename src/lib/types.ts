@@ -110,6 +110,7 @@ export interface MembershipApplication {
   tier_id?: string
   membership_tiers?: MembershipTier
   message?: string
+  attachment_urls?: string[] 
   status: ApplicationStatus
   created_at: string
   updated_at: string

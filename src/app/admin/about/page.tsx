@@ -1,4 +1,5 @@
 'use client'
+import { getSiteInfo, upsertSiteInfo } from '@/lib/db'
 import { useState, useEffect } from 'react'
 import { SiteInfo } from '@/lib/types'
 
@@ -58,26 +59,22 @@ export default function AboutPage() {
   useEffect(() => { fetchData() }, [])
 
   async function fetchData() {
-    try {
-      setError(null)
-      setLoading(true)
-      const res = await fetch('/api/admin/site-info')
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const rows = await res.json()
-      
-      const map: SiteInfoMap = {}
-      rows.forEach((row: SiteInfo) => {
-        if (!map[row.section]) map[row.section] = {}
-        map[row.section][row.key] = row.value ?? ''
-      })
-      setData(map)
-      setLoading(false)
-    } catch (err) {
-      console.error('Failed to fetch site info:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load site info')
-      setLoading(false)
-    }
+  try {
+    setError(null)
+    setLoading(true)
+    const rows = await getSiteInfo()
+    const map: SiteInfoMap = {}
+    rows.forEach((row) => {
+      if (!map[row.section]) map[row.section] = {}
+      map[row.section][row.key] = row.value ?? ''
+    })
+    setData(map)
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Failed to load')
+  } finally {
+    setLoading(false)
   }
+}
 
   function setValue(section: string, key: string, value: string) {
     setData(prev => ({
@@ -87,31 +84,25 @@ export default function AboutPage() {
   }
 
   async function saveSection(sectionKey: string) {
-    try {
-      setSaving(sectionKey)
-      const section = SECTIONS.find(s => s.key === sectionKey)!
-      const values = data[sectionKey] ?? {}
-
-      await Promise.all(
-        section.fields.map(field =>
-          fetch('/api/admin/site-info', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ section: sectionKey, key: field.key, value: values[field.key] ?? '' }),
-          })
-        )
+  try {
+    setSaving(sectionKey)
+    const section = SECTIONS.find(s => s.key === sectionKey)!
+    const values = data[sectionKey] ?? {}
+    await Promise.all(
+      section.fields.map(field =>
+        upsertSiteInfo(sectionKey, field.key, values[field.key] ?? '')
       )
-
-      setSaving(null)
-      setSaved(sectionKey)
-      setTimeout(() => setSaved(null), 2500)
-      fetchData()
-    } catch (err) {
-      console.error('Failed to save section:', err)
-      setSaving(null)
-      setError(err instanceof Error ? err.message : 'Failed to save section')
-    }
+    )
+    setSaved(sectionKey)
+    setTimeout(() => setSaved(null), 2500)
+    fetchData()
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Failed to save')
+  } finally {
+    setSaving(null)
   }
+}
+
 
   if (loading) {
     return (
