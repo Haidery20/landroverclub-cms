@@ -1,5 +1,5 @@
 'use client'
-import { exportMembershipApplicationsPDF } from '@/lib/pdf-export'
+import { exportMembershipApplicationsPDF, exportMembershipApplicationDetailPDF } from '@/lib/pdf-export'
 import { getMembershipTiers, getMembershipApplications, createMembershipTier, updateMembershipTier, deleteMembershipTier, updateApplicationStatus } from '@/lib/db'
 import { useState, useEffect } from 'react'
 import { MembershipTier, MembershipApplication, ApplicationStatus } from '@/lib/types'
@@ -248,14 +248,14 @@ export default function MembershipPage() {
               ))}
 
               <button
-  onClick={() => exportMembershipApplicationsPDF(filteredApps, appFilter)}
-  className="ml-auto flex items-center gap-2 px-4 py-2 bg-[#0a0f0d] text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors"
->
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-  </svg>
-  Export PDF
-</button>
+                onClick={() => exportMembershipApplicationsPDF(filteredApps, appFilter)}
+                className="ml-auto flex items-center gap-2 px-4 py-2 bg-[#0a0f0d] text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                Export PDF
+              </button>
             </div>
             <div className="space-y-2">
               {filteredApps.map(app => (
@@ -393,8 +393,8 @@ export default function MembershipPage() {
                       key={s}
                       onClick={() => handleUpdateAppStatus(selectedApp.id, s)}
                       className={`py-2 rounded-lg text-xs font-medium capitalize transition-all ${selectedApp.status === s
-                          ? statusColors[s] + ' ring-1 ring-current'
-                          : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                        ? statusColors[s] + ' ring-1 ring-current'
+                        : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                         }`}
                     >
                       {s}
@@ -402,6 +402,15 @@ export default function MembershipPage() {
                   ))}
                 </div>
               </div>
+              <button
+                onClick={() => exportMembershipApplicationDetailPDF(selectedApp)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#0a0f0d] text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors mt-4"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                Download PDF
+              </button>
             </div>
           )}
 

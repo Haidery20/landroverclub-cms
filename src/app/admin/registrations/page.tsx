@@ -1,5 +1,5 @@
 'use client'
-import { exportEventRegistrationsPDF } from '@/lib/pdf-export'
+import { exportEventRegistrationsPDF, exportEventRegistrationDetailPDF } from '@/lib/pdf-export'
 import { useState, useEffect } from 'react'
 import { collection, getDocs, query, orderBy, updateDoc, deleteDoc, doc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -16,6 +16,7 @@ export default function RegistrationsPage() {
   const [loading, setLoading] = useState(true)
   const [filterEvent, setFilterEvent] = useState('All')
   const [filterStatus, setFilterStatus] = useState('All')
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
   useEffect(() => { fetchRegistrations() }, [])
 
@@ -35,6 +36,15 @@ export default function RegistrationsPage() {
     if (!confirm('Delete this registration?')) return
     await deleteDoc(doc(db, 'event_registrations', id))
     fetchRegistrations()
+  }
+
+  async function handleDownload(r: EventRegistration) {
+    setDownloadingId(r.id)
+    try {
+      await exportEventRegistrationDetailPDF(r)
+    } finally {
+      setDownloadingId(null)
+    }
   }
 
   const eventTitles = ['All', ...Array.from(new Set(registrations.map(r => r.event_title)))]
@@ -64,39 +74,36 @@ export default function RegistrationsPage() {
         </button>
       </div>
 
-      {/* Filters */}
+      {/* Filters + Export */}
       <div className="flex flex-wrap gap-3 mb-6">
-        <div>
-          <select
-            value={filterEvent}
-            onChange={e => setFilterEvent(e.target.value)}
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:border-green-400"
-          >
-            {eventTitles.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
-        </div>
-        <div>
-          <select
-            value={filterStatus}
-            onChange={e => setFilterStatus(e.target.value)}
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:border-green-400"
-          >
-            <option value="All">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-        </div>
+        <select
+          value={filterEvent}
+          onChange={e => setFilterEvent(e.target.value)}
+          className="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:border-green-400"
+        >
+          {eventTitles.map(t => <option key={t} value={t}>{t}</option>)}
+        </select>
+
+        <select
+          value={filterStatus}
+          onChange={e => setFilterStatus(e.target.value)}
+          className="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:border-green-400"
+        >
+          <option value="All">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
 
         <button
-    onClick={() => exportEventRegistrationsPDF(filtered, filterEvent, filterStatus)}
-    className="flex items-center gap-2 px-4 py-2 bg-[#0a0f0d] text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors"
-  >
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-    </svg>
-    Export PDF
-  </button>
+          onClick={() => exportEventRegistrationsPDF(filtered, filterEvent, filterStatus)}
+          className="flex items-center gap-2 px-4 py-2 bg-[#0a0f0d] text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+          </svg>
+          Export All PDF
+        </button>
       </div>
 
       {loading ? (
@@ -152,14 +159,34 @@ export default function RegistrationsPage() {
                       </select>
                     </td>
                     <td className="px-6 py-4">
-                      <button
-                        onClick={() => deleteRegistration(r.id)}
-                        className="text-gray-300 hover:text-red-500 transition-colors"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                        </svg>
-                      </button>
+                      <div className="flex items-center gap-3">
+                        {/* Download individual PDF */}
+                        <button
+                          onClick={() => handleDownload(r)}
+                          disabled={downloadingId === r.id}
+                          title="Download PDF"
+                          className="text-gray-400 hover:text-green-600 transition-colors disabled:opacity-40"
+                        >
+                          {downloadingId === r.id ? (
+                            <div className="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                            </svg>
+                          )}
+                        </button>
+
+                        {/* Delete */}
+                        <button
+                          onClick={() => deleteRegistration(r.id)}
+                          title="Delete"
+                          className="text-gray-300 hover:text-red-500 transition-colors"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                          </svg>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
