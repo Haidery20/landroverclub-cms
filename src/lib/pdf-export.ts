@@ -341,7 +341,6 @@ export async function exportMembershipApplicationDetailPDF(app: any) {
   // ── Attachments page ──
   const attachments: string[] = []
   if (app.attachment_urls?.length) attachments.push(...app.attachment_urls)
-  // Also pick up individual URL fields saved by the website form
   if (app.id_doc_url && !attachments.includes(app.id_doc_url))         attachments.push(app.id_doc_url)
   if (app.payment_proof_url && !attachments.includes(app.payment_proof_url)) attachments.push(app.payment_proof_url)
   const uniqueAttachments = [...new Set(attachments.filter(Boolean))]
@@ -426,15 +425,58 @@ export async function exportEventRegistrationDetailPDF(reg: any) {
     }) : '—', y, W)
   y += 4
 
-  // ── Registrant Details ──
-  y = sectionHeading(doc, 'Registrant Details', y, W)
+  // ── Participant Details ──
+  y = sectionHeading(doc, 'Participant Details', y, W)
   y = fieldRow(doc, 'Full Name', reg.full_name || '—', y, W)
   y = fieldRow(doc, 'Email',     reg.email     || '—', y, W)
   y = fieldRow(doc, 'Phone',     reg.phone     || '—', y, W)
-  if (reg.message) y = fieldRow(doc, 'Message', reg.message, y, W)
+  y = fieldRow(doc, 'Vehicle',   reg.vehicle   || '—', y, W)
   y += 4
 
-  // ── Registration Info ──
+  // ── Attendance & Package ──
+  y = sectionHeading(doc, 'Attendance & Package', y, W)
+  const daysVal = Array.isArray(reg.days_attending)
+    ? reg.days_attending.join(', ')
+    : reg.days_attending || '—'
+  y = fieldRow(doc, 'Days Attending', daysVal, y, W)
+  const durationLabel =
+    reg.duration === 'one' ? 'One night' :
+    reg.duration === 'two' ? 'Two nights' :
+    reg.duration || '—'
+  y = fieldRow(doc, 'Duration', durationLabel, y, W)
+  const peopleVal = reg.people_count
+    ? `${reg.people_count} ${Number(reg.people_count) === 1 ? 'person' : 'people'}`
+    : '—'
+  y = fieldRow(doc, 'People Count',  peopleVal, y, W)
+  y = fieldRow(doc, 'Package Price', reg.package_price ? `TZS ${reg.package_price}` : '—', y, W)
+  y += 4
+
+  // ── Accommodation ──
+  y = sectionHeading(doc, 'Accommodation', y, W)
+  y = fieldRow(doc, 'Type',   reg.accommodation_type   || '—', y, W)
+  y = fieldRow(doc, 'Nights', reg.accommodation_nights || '—', y, W)
+  y += 4
+
+  // ── Payment ──
+  y = sectionHeading(doc, 'Payment', y, W)
+  y = fieldRow(doc, 'Payment Method', reg.payment_method || '—', y, W)
+  y += 4
+
+  // ── Additional Info (only if data exists) ──
+  const hasExtra = reg.emergency_contact || reg.comments || reg.message
+  if (hasExtra) {
+    y = sectionHeading(doc, 'Additional Information', y, W)
+    if (reg.emergency_contact) {
+      y = fieldRow(doc, 'Emergency Contact', reg.emergency_contact, y, W)
+    }
+    const notes = reg.comments || reg.message
+    if (notes) {
+      y = fieldRow(doc, 'Comments / Notes', notes, y, W)
+    }
+    y += 4
+  }
+
+  // ── Registration Meta ──
   y = sectionHeading(doc, 'Registration Info', y, W)
   y = fieldRow(doc, 'Registered At',
     reg.registered_at ? new Date(reg.registered_at).toLocaleString('en-TZ') : '—', y, W)
@@ -468,8 +510,8 @@ export async function exportEventRegistrationDetailPDF(reg: any) {
   )
 
   addFooter(doc)
-  const safeName  = (reg.full_name    || 'registration').replace(/[^a-zA-Z0-9]/g, '-').slice(0, 40)
-  const safeEvent = (reg.event_title  || '').replace(/[^a-zA-Z0-9]/g, '-').slice(0, 30)
+  const safeName  = (reg.full_name   || 'registration').replace(/[^a-zA-Z0-9]/g, '-').slice(0, 40)
+  const safeEvent = (reg.event_title || '').replace(/[^a-zA-Z0-9]/g, '-').slice(0, 30)
   doc.save(`LRCT-Registration-${safeName}-${safeEvent}-${new Date().toISOString().slice(0, 10)}.pdf`)
 }
 
@@ -534,36 +576,46 @@ export async function exportEventRegistrationsPDF(
 
   autoTable(doc, {
     startY: 52,
-    head: [['#', 'Full Name', 'Email', 'Phone', 'Event', 'Event Date', 'Message', 'Registered', 'Status']],
+    head: [['#', 'Full Name', 'Email', 'Phone', 'Vehicle', 'Event', 'Days', 'Duration', 'People', 'Price', 'Accommodation', 'Payment', 'Registered', 'Status']],
     body: registrations.map((r, i) => [
       i + 1,
       r.full_name || '—',
       r.email || '—',
       r.phone || '—',
+      r.vehicle || '—',
       r.event_title || '—',
-      r.event_date ? new Date(r.event_date).toLocaleDateString('en-TZ', { day: 'numeric', month: 'short', year: 'numeric' }) : '—',
-      r.message || '—',
+      Array.isArray(r.days_attending) ? r.days_attending.join(', ') : r.days_attending || '—',
+      r.duration === 'one' ? '1 Night' : r.duration === 'two' ? '2 Nights' : r.duration || '—',
+      r.people_count || '—',
+      r.package_price ? `TZS ${r.package_price}` : '—',
+      [r.accommodation_type, r.accommodation_nights].filter(Boolean).join(' · ') || '—',
+      r.payment_method || '—',
       r.registered_at ? new Date(r.registered_at).toLocaleDateString('en-TZ', { day: 'numeric', month: 'short', year: 'numeric' }) : '—',
       (r.status || '').charAt(0).toUpperCase() + (r.status || '').slice(1) || '—',
     ]),
-    headStyles: { fillColor: DARK, textColor: WHITE, fontStyle: 'bold', fontSize: 7.5, cellPadding: { top: 4, bottom: 4, left: 3, right: 3 } },
-    bodyStyles: { fontSize: 7.5, textColor: [31, 41, 55], cellPadding: { top: 3, bottom: 3, left: 3, right: 3 } },
+    headStyles: { fillColor: DARK, textColor: WHITE, fontStyle: 'bold', fontSize: 6.5, cellPadding: { top: 3, bottom: 3, left: 2, right: 2 } },
+    bodyStyles: { fontSize: 6.5, textColor: [31, 41, 55], cellPadding: { top: 2.5, bottom: 2.5, left: 2, right: 2 } },
     alternateRowStyles: { fillColor: [248, 249, 250] },
     columnStyles: {
-      0: { cellWidth: 8,  halign: 'center', fontStyle: 'bold' },
-      1: { cellWidth: 34 },
-      2: { cellWidth: 46 },
-      3: { cellWidth: 26 },
-      4: { cellWidth: 44 },
-      5: { cellWidth: 22 },
-      6: { cellWidth: 38 },
-      7: { cellWidth: 22 },
-      8: { cellWidth: 26, halign: 'center' },
+      0:  { cellWidth: 6,  halign: 'center', fontStyle: 'bold' },
+      1:  { cellWidth: 28 },
+      2:  { cellWidth: 36 },
+      3:  { cellWidth: 22 },
+      4:  { cellWidth: 22 },
+      5:  { cellWidth: 30 },
+      6:  { cellWidth: 18 },
+      7:  { cellWidth: 14 },
+      8:  { cellWidth: 10, halign: 'center' },
+      9:  { cellWidth: 20 },
+      10: { cellWidth: 24 },
+      11: { cellWidth: 18 },
+      12: { cellWidth: 18 },
+      13: { cellWidth: 20, halign: 'center' },
     },
-    didDrawCell: (data) => colorStatusCell(data, doc, 8),
+    didDrawCell: (data) => colorStatusCell(data, doc, 13),
     tableLineColor: LGRAY,
     tableLineWidth: 0.2,
-    margin: { left: 14, right: 14, bottom: 14 },
+    margin: { left: 8, right: 8, bottom: 14 },
   })
 
   addFooter(doc)
