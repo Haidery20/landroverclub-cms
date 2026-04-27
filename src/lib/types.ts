@@ -27,6 +27,16 @@ export interface EventRegistration {
   full_name: string
   email: string
   phone?: string
+  vehicle?: string
+  days_attending?: string[] | string
+  duration?: string
+  people_count?: string
+  package_price?: string
+  accommodation_type?: string
+  accommodation_nights?: string
+  payment_method?: string
+  emergency_contact?: string
+  comments?: string
   message?: string
   status: RegistrationStatus
   registered_at: string
